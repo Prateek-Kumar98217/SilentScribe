@@ -17,29 +17,33 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the FastAPI application!"}
+    return {"message": "Welcome to the SilentScribe!"}
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(files: list[UploadFile] = File(...)):
     """
     Upload endpoint to receive code file, validate it, and prepare for narration.
     """
-    filename = file.filename
-    contents = await file.read()
+    result = []
+    for file in files:
+        filename = file.filename
+        contents = await file.read()
 
-    try:
-        model = CodeFileInput(
-            file_name=filename,
-            file_type=os.path.splitext(filename)[-1][1:],
-            file_content=contents.decode("utf-8")
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Validation error: {e}")
+        try:
+            model = CodeFileInput(
+                file_name=filename,
+                file_type=os.path.splitext(filename)[-1][1:],
+                file_content=contents.decode("utf-8")
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Validation error: {e}")
 
-    structure = parsing.extract_ast_metadata(model.file_content)
+        structure = parsing.extract_ast_metadata(model.file_content)
 
-    return {
-        "message": "File accepted",
-        "type": model.file_type,
-        "structure": structure
-    }
+        result.append({
+            "message": "File accepted",
+            "file_name": model.file_name,
+            "type": model.file_type,
+            "structure": structure
+        })
+    return {"message":"files have been processed", "result": result}
