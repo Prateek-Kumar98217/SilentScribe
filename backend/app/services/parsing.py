@@ -1,79 +1,55 @@
 import ast
 
-NODE_TYPE_MAP = {
-    ast.FunctionDef: "function",
-    ast.AsyncFunctionDef: "async function",
-    ast.ClassDef: "class",
-    ast.Import: "import",
-    ast.ImportFrom: "import_from"
-}
-
-def extract_ast_metadata(source_code: str) -> dict:
+def parse_file_to_blocks(file_content: str) -> list[dict]:
     """
-    Extract metadata from Python code using AST parsing.
+    Parse the content of the file and extract code blocks.
     """
     try:
-        tree = ast.parse(source_code)
-    except SyntaxError as e:
-        print(f"Syntax error in code: {e}")
-        return {"error": str(e)}
-    structure = []
-    for node in ast.walk(tree):
-        node_type = type(node)
-        if node_type not in NODE_TYPE_MAP:
-            continue
-        base_info = {
-            "type": NODE_TYPE_MAP[node_type],
+        tree = ast.parse(file_content)
+    except SyntaxError:
+        raise ValueError("Syntax error in the provided file content")
+    
+    code_blocks = []
+
+    for node in tree.body:
+        block = {
+            "type":None,
+            "name": getattr(node, "name", None),
             "lineno": getattr(node, "lineno", None),
-            "col_offset": getattr(node, "col_offset", None)
+            "col_offset": getattr(node, "col_offset", None),
+            "end_lineno": getattr(node, "end_lineno", None),
+            "end_col_offset": getattr(node, "end_col_offset", None),
+            "docstring": None,
+            "used_names":[],
+            "args":[],
+            "returns": None,
+            "code": ast.get_source_segment(file_content, node) or ast.unparse(node)
         }
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            base_info["name"] = node.name
 
+        if isinstance(node, ast.FunctionDef):
+            block["type"] = "function"
+            block["docstring"] = ast.get_docstring(node)
+            block["used_names"] = sorted({n.id for n in ast.walk(node) if isinstance(n, ast.Name)})
+            block["args"] = [arg.arg for arg in node.args.args]
+            block["returns"] = ast.unparse(node.returns) if node.returns else None
+        elif isinstance(node, ast.AsyncFunctionDef):
+            block["type"] = "asyncfunction"
+            block["docstring"] = ast.get_docstring(node)
+            block["used_names"] = sorted({n.id for n in ast.walk(node) if isinstance(n, ast.Name)})
+            block["args"] = [arg.arg for arg in node.args.args]
+            block["returns"] = ast.unparse(node.returns) if node.returns else None
+        elif isinstance(node, ast.ClassDef):
+            block["type"] = "class"
+            block["docstring"] = ast.get_docstring(node)
+            block["used_names"] = sorted({n.id for n in ast.walk(node) if isinstance(n, ast.Name)})
         elif isinstance(node, ast.Import):
-            base_info["names"] = [alias.name for alias in node.names]
-
+            block["type"] = "import"
+            block["used_names"] = sorted({n.name for n in node.names})
         elif isinstance(node, ast.ImportFrom):
-            base_info["module"] = node.module
-            base_info["names"] = [alias.name for alias in node.names]
-        structure.append(base_info)
-    return structure
+            block["type"] = "import_from"
+            block["used_names"] = sorted({n.name for n in node.names})
+        else :
+            continue
 
-def get_node_content(node: ast.AST, source_code: str)-> str:
-    """
-    Extract the source code from AST nodes
-    """
-    node_type = type(node)
-    if node_type not in NODE_TYPE_MAP:
-        return None
-    
-    content = {
-        "type": NODE_TYPE_MAP[node_type],
-        "lineno": getattr(node, "lineno", None),
-        "col_offset": getattr(node, "col_offset", None),
-        "end_lineno": getattr(node, "end_lineno", None),
-        "end_col_offset": getattr(node, "end_col_offset", None),
-        "code": ast.get_source_segment(source_code, node) or ast.unparse(node)
-    }
-    
-    if hasattr(node, "name"):
-        content["name"] = node.name
-
-    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-        content["args"] = [arg.arg for arg in node.args.args]
-        content["returns"] = ast.unparse(node.returns) if node.returns else None
-
-    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-        content["docstring"] = ast.get_docstring(node)
-        content["used_names"] = sorted({
-            n.id for n in ast.walk(node) if isinstance(n, ast.Name)
-        })
-
-    if isinstance(node, ast.Import):
-        content["names"] = [alias.name for alias in node.names]
-
-    if isinstance(node, ast.ImportFrom):
-        content["module"] = node.module
-        content["names"] = [alias.name for alias in node.names]
-
-    return content
+        code_blocks.append(block)
+    return code_blocks

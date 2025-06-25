@@ -1,6 +1,5 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 from datetime import datetime
-from typing import Literal
 
 # User schema definations
 class UserBase(BaseModel):
@@ -9,6 +8,11 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     full_name: str
     password: str
+
+class UserUpdate(BaseModel):
+    full_name: str | None = None
+    password = str | None = None
+    is_active: bool | None = None
 
 class UserOut(UserBase):
     id: int
@@ -21,8 +25,11 @@ class ProjectBase(BaseModel):
     description: str | None = None
 
 class ProjectCreate(ProjectBase):
-    pass
+    owner_id: int
 
+class ProjectUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
 class ProjectOut(ProjectBase):
     id: int
     owner_id: int
@@ -34,20 +41,11 @@ class CodeFileBase(BaseModel):
     file_content: str
 
 class CodeFileCreate(CodeFileBase):
-    file_type: Literal["py"]
+    project_id: int
 
-    @validator("file_name")
-    def validate_file_name(cls, v):
-        if not v.endswith(".py"):
-            raise ValueError("Need python file")
-        return v
-    
-    @validator("file_content")
-    def validate_file_content(cls, v):
-        if not v.strip():
-            raise ValueError("File content cannot be empty")
-        return v
-    
+class CodeFileUpdate(BaseModel):
+    file_name: str | None = None
+    file_content: str | None = None
 class CodeFileOut(CodeFileBase):
     id: int
     project_id: int
@@ -66,9 +64,6 @@ class CodeBlockBase(BaseModel):
     args: list[str] = []
     returns: str | None = None
     code: str
-
-class CodeBlockCreate(CodeBlockBase):
-    file_id: int
 
 class CodeBlockOut(CodeBlockBase):
     id: int

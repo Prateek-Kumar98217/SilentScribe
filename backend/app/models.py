@@ -26,7 +26,7 @@ class Project(Base):
     owner = relationship("User", back_populates="projects")
     files = relationship("CodeFiles", back_populates ="project")
 
-class CodeFiles(Base):
+class CodeFile(Base):
     __tablename__ = "code_files"
 
     id = Column(Integer, primary_key=True, index=True)
