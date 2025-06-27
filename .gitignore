@@ -1,0 +1,57 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Python virtual environments
+venv/
+.env
+.venv/
+env/
+*.env
+*.env.*
+
+# Pytest cache
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+
+# SQLite database files (optional)
+*.db
+*.sqlite3
+
+# VS Code settings
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Coverage reports
+htmlcov/
+.coverage
+.cache
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Node.js (frontend)
+frontend/node_modules/
+frontend/.env
+frontend/.next/
+frontend/.turbo/
+frontend/.cache/
+frontend/build/
+frontend/dist/
+
+# Build outputs
+dist/
+build/
+
+# Production config
+docker-compose.override.yml
