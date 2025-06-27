@@ -13,3 +13,4 @@ class Project(database.Base):
     created_at = Column(DateTime, default = datetime.now())
 
     owner = relationship("User", back_populates="projects")
+    codefiles= relationship("CodeFile", back_populates="project", cascade="all, delete")

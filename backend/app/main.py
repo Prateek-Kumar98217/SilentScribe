@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import authentication, project
+from app.routes import authentication, project, codefile
 from app.core.database import Base, engine
 
 Base.metadata.create_all(engine)
@@ -16,3 +16,4 @@ app.add_middleware(
 
 app.include_router(authentication.router)
 app.include_router(project.router)
+app.include_router(codefile.router)
