@@ -1,31 +1,28 @@
 from sqlalchemy.orm import Session
-from app.models.codefile import CodeFile
-from app.schemas.codefile import CodeFileCreate, CodeFileUpdate
+from app.models import CodeFile
+from app.schemas.api import CodeFileCreate
 
-def create_codefile(data: CodeFileCreate, db: Session)-> CodeFile:
-    codefile=CodeFile(
-        title=data.title,
-        description=data.description,
+
+def create_codefile(db: Session, data: CodeFileCreate) -> CodeFile:
+    db_file = CodeFile(
+        name=data.name,
+        content=data.content,
         project_id=data.project_id
     )
-    db.add(codefile)
+    db.add(db_file)
     db.commit()
-    db.refresh(codefile)
-    return codefile
+    db.refresh(db_file)
+    return db_file
 
-def get_codefile_by_id(codefile_id: int, db: Session)-> CodeFile:
-    return db.get(CodeFile, codefile_id)
 
-def get_codefiles_by_project_id(project_id: int, db: Session)-> list[CodeFile]:
-    return db.query(CodeFile).filter(CodeFile.project_id==project_id).all()
+def get_codefile(db: Session, file_id: str) -> CodeFile | None:
+    return db.get(CodeFile, file_id)
 
-def update_codefile(codefile: CodeFile, update_data: CodeFileUpdate, db: Session)-> CodeFile:
-    for key, value in update_data.model_dump(exclude_unset=True).items():
-        setattr(codefile, key, value)
-    db.commit()
-    db.refresh(codefile)
-    return codefile
 
-def delete_codefile(codefile: CodeFile, db: Session)-> None:
-    db.delete(codefile)
+def get_codefiles_by_project(db: Session, project_id: str) -> list[CodeFile]:
+    return db.query(CodeFile).filter(CodeFile.project_id == project_id).all()
+
+
+def delete_codefile(db: Session, file: CodeFile) -> None:
+    db.delete(file)
     db.commit()
